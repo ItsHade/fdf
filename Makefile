@@ -16,7 +16,6 @@ all: $(NAME)
 $(NAME): $(OBJS)
 	$(CC) $(FLAGS) $(OBJS) -lbsd -Lminilibx-linux -lmlx_Linux -lXext -lX11 -lm -o $(NAME)
 	# $(NAME): $(OBJS)
-# 	$(CC) $(FLAGS) $(OBJS) -lbsd -lmlx -lXext -lX11 -o $(NAME)
 
 clean:
 		$(RM) $(OBJS)
