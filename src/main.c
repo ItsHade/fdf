@@ -27,10 +27,12 @@ typedef struct
     void *mlx;
     void *win;
     t_data img;
-    char **map;
+    // char **map;
     int map_y;
     int map_x;
     char *file;
+    int bufferSize;
+    char *to_parse;
     
 } parameters;
 
@@ -42,6 +44,47 @@ void ft_mlx_pixel_put(t_data *img, int x, int y, int color)
 	*(unsigned int*)dst = color;
 }
 
+int ft_get_file_len(parameters *par)
+{
+    char buffer[1];
+    int fd;
+    int nbBytesRead;
+
+    fd = open(par->file, O_RDONLY);
+    if (fd < 0)
+        return (-1);
+    nbBytesRead = 1;
+    par->bufferSize = 0;
+    while (nbBytesRead != 0)
+    {
+        nbBytesRead = read(fd, buffer, 1);
+        par->bufferSize += nbBytesRead;
+    }
+    close(fd);
+    return (0);
+}
+
+int ft_get_to_parse(parameters *par)
+{
+    int fd;
+
+    ft_putstr("totalBytes: ");
+    ft_putnbr(par->bufferSize);
+    ft_putchar('\n');
+
+    fd = open(par->file, O_RDONLY);
+    if (fd < 0)
+        return (-1);
+    par->to_parse = malloc(sizeof(char) * (par->bufferSize + 1));
+    if (!par->to_parse)
+        return (close(fd), -1);
+    read(fd, par->to_parse, par->bufferSize);
+    par->to_parse[par->bufferSize] = 0;
+    ft_putstr(par->to_parse);
+    return (close(fd), 0);
+}
+
+/*
 int ft_get_map_x(parameters *par)
 {
     char buffer[1];
@@ -93,6 +136,7 @@ int ft_get_map_y(parameters *par)
     close(fd);
     return (0);
 }
+*/
 
 void ft_create_square(t_data *img, int pos_x, int pos_y, int size, int color)
 {
@@ -112,13 +156,32 @@ void ft_create_square(t_data *img, int pos_x, int pos_y, int size, int color)
 	}
 }
 
-
+//remodeler avec to_parse
 void ft_put_matrix_to_img(parameters *par, int pos_x, int pos_y)
 {
     int y;
     int x;
+    int i;
 
     y = 0;
+    i = 0;
+    while (par->to_parse[i])y = 0;
+    while (y < par->map_y)
+    {
+        x = 0;
+        while (x < par->map_x)
+        {
+            if (par->map[y][x] == '1')
+                ft_mlx_pixel_put(&par->img, pos_x + x, pos_y + y, RED);
+            else
+                ft_mlx_pixel_put(&par->img, pos_x + x, pos_y + y, BLUE);
+            x++;
+        }
+        y++;
+    }
+    {
+
+    }
     while (y < par->map_y)
     {
         x = 0;
@@ -134,6 +197,7 @@ void ft_put_matrix_to_img(parameters *par, int pos_x, int pos_y)
     }
 }
 
+/*
 void ft_display_matrix(parameters *par)
 {
     int y;
@@ -155,8 +219,9 @@ void ft_display_matrix(parameters *par)
     }
 }
 
-//doesn't work for maps with color
-void ft_fill_map(parameters *par)
+//remplacer par fonction qui parse to_parse et rempli le tableau
+//mais je sais pas si necessaire et tab de int --> pb avec les couleurs tab de char pb avec la longeur de chaques cases
+int ft_fill_map(parameters *par)
 {
     int y;
     int x;
@@ -216,10 +281,12 @@ void ft_free_matrix(parameters *par)
     }
     free(par->map);
 }
+*/
 
 int ft_exit(parameters *par)
 {
-    ft_free_matrix(par);
+    // ft_free_matrix(par);
+    free(par->to_parse);
     mlx_destroy_image(par->mlx, par->img.img);
     mlx_destroy_window(par->mlx, par->win);
     mlx_destroy_display(par->mlx);
@@ -241,23 +308,14 @@ int main(int argc, char **argv)
     if (argc != 2)
         return (0);
     par.file = argv[1];
-    ft_putstr(par.file);
-    ft_get_map_y(&par);
-    ft_get_map_x(&par);
-    ft_putstr("y: ");
-    ft_putnbr(par.map_y);
-    ft_putchar('\n');
-    ft_putstr("x: ");
-    ft_putnbr(par.map_x);
-    ft_putchar('\n');
-    ft_get_map(&par);
-    ft_display_matrix(&par);
+    ft_get_file_len(&par);
+    ft_get_to_parse(&par);
     par.mlx = mlx_init();
     par.win = mlx_new_window(par.mlx, WIDTH, HEIGHT, "fdf");
     par.img.img = mlx_new_image(par.mlx, WIDTH, HEIGHT);
     par.img.addr = mlx_get_data_addr(par.img.img, &par.img.bits_per_pixels, &par.img.line_length, &par.img.endian);
     ft_create_square(&par.img, 20, 20, 20, WHITE);
-    ft_put_matrix_to_img(&par, 20, 20);
+    // ft_put_matrix_to_img(&par, 20, 20);
     mlx_put_image_to_window(par.mlx, par.win, par.img.img, 0, 0);
     mlx_loop_hook(par.mlx, NULL, NULL);
 	mlx_hook(par.win, 17, 0, ft_exit, &par); // button fermer la fenetre
